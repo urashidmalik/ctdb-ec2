@@ -23,10 +23,7 @@ make all
 %{__rm} -rf %{buildroot}
 %{__mkdir_p} %{buildroot}%{_sysconfdir}/ctdb
 
-%{__install} -p -m 0644 ec2.rc %{buildroot}%{_sysconfdir}/ctdb
-%{__install} -p -m 0644 ec2-eni-functions %{buildroot}%{_sysconfdir}/ctdb
 %{__install} -p -m 0644 ec2-config %{buildroot}%{_sysconfdir}/ctdb
-%{__install} -p -m 0755 interface_modify_ec2.sh %{buildroot}%{_sysconfdir}/ctdb
 %{__install} -p -m 0755 functions %{buildroot}%{_sysconfdir}/ctdb/functions-ec2
 
 %clean
@@ -35,10 +32,7 @@ make all
 %files
 %defattr(-,root,root)
 %doc README.md COPYING
-%config(noreplace) /etc/ctdb/ec2.rc
-%config(noreplace) /etc/ctdb/ec2-eni-functions
 %config(noreplace) /etc/ctdb/ec2-config
-/etc/ctdb/interface_modify_ec2.sh
 /etc/ctdb/functions-ec2
 
 %post
