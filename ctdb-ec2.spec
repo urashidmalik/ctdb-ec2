@@ -47,13 +47,12 @@ if [ -f /etc/ctdb/interface_modify.sh ]; then
 fi
 if [ -f /etc/ctdb/functions ]; then
     %{__cp} -af /etc/ctdb/functions /etc/ctdb/functions.orig
-    %{__mv} -f /etc/ctdb/functions-ec2 /etc/ctdb/functions.orig
+    %{__cp} -af /etc/ctdb/functions-ec2 /etc/ctdb/functions
 fi
 
 %postun
 if [ -f /etc/ctdb/interface_modify.sh.orig ]; then
-    %{__cp} -af /etc/ctdb/interface_modify.sh.orig /etc/ctdb/interface_modify.sh
-    %{__rm} -f /etc/ctdb/interface_modify.sh.orig
+    %{__mv} -f /etc/ctdb/interface_modify.sh.orig /etc/ctdb/interface_modify.sh
 fi
 if [ -f /etc/ctdb/functions.orig ]; then
     %{__mv} -f /etc/ctdb/functions.orig /etc/ctdb/functions
@@ -62,4 +61,3 @@ fi
 %changelog
 * Mon Dec 09 2013 Harshavardhana <fharshav@redhat.com> - 1.0-1
 * April 2017 Chris Blum <cblum@redhat.com> - 1.3
-- First import build
