@@ -17,26 +17,26 @@ add_ip_to_iface()
     local _ip=$2
     local _maskbits=$3
     local _readd_base=$4
-    local _script_dir="$_readd_base/$_ip.$_maskbits"
+    local _script_dir="${_readd_base}/${_ip}.${_maskbits}"
 
-    add_ec2_secondary_private_ip $_iface $_ip
+    add_ec2_secondary_private_ip ${_iface} ${_ip}
 
     # we make sure the interface is up first
-    /sbin/ip link set $_iface up || {
-        echo "Failed to bringup interface $_iface"
+    /sbin/ip link set ${_iface} up || {
+        echo "Failed to bring up interface ${_iface}"
         return 1;
     }
-    /sbin/ip addr add $_ip/$_maskbits brd + dev $_iface || {
-        echo "Failed to add $_ip/$_maskbits on dev $_iface"
-        return 1;
-    }
-
-    mkdir -p $_script_dir || {
-        echo "Failed to mkdir -p $_script_dir"
+    /sbin/ip addr add ${_ip}/${_maskbits} brd + dev ${_iface} || {
+        echo "Failed to add ${_ip}/${_maskbits} on dev ${_iface}"
         return 1;
     }
 
-    rm -f $_script_dir/*
+    mkdir -p ${_script_dir} || {
+        echo "Failed to mkdir -p ${_script_dir}"
+        return 1;
+    }
+
+    rm -f ${_script_dir}/*
 
     return 0;
 }
@@ -47,41 +47,41 @@ delete_ip_from_iface()
     local _ip=$2
     local _maskbits=$3
     local _readd_base=$4
-    local _script_dir="$_readd_base/$_ip.$_maskbits"
+    local _script_dir="${_readd_base}/${_ip}.${_maskbits}"
 
     # the ip tool will delete all secondary IPs if this is the primary. To work around
     # this _very_ annoying behaviour we have to keep a record of the secondaries and re-add
     # them afterwards. yuck
     local _secondaries=""
-    if /sbin/ip addr list dev $_iface primary | grep -q "inet $_ip/$_maskbits " ; then
-        _secondaries=`/sbin/ip addr list dev $_iface secondary | grep " inet " | awk '{print $2}'`
+    if /sbin/ip addr list dev ${_iface} primary | grep -q "inet ${_ip}/${_maskbits} " ; then
+        _secondaries=`/sbin/ip addr list dev ${_iface} secondary | grep " inet " | awk '{print $2}'`
     fi
     local _failed=0
-    delete_ec2_secondary_private_ip $_iface $_ip
+    delete_ec2_secondary_private_ip ${_iface} ${_ip}
 
-    /sbin/ip addr del $_ip/$_maskbits dev $_iface || _failed=1
+    /sbin/ip addr del ${_ip}/${_maskbits} dev ${_iface} || _failed=1
     [ -z "$_secondaries" ] || {
         local _i=""
         for _i in $_secondaries; do
-            if /sbin/ip addr list dev $_iface | grep -q "inet $_i" ; then
-                echo "kept secondary $_i on dev $_iface"
+            if /sbin/ip addr list dev ${_iface} | grep -q "inet ${_i}" ; then
+                echo "kept secondary ${_i} on dev ${_iface}"
             else
-                echo "re-adding secondary address $_i to dev $_iface"
-                /sbin/ip addr add $_i brd + dev $_iface || _failed=1
+                echo "re-adding secondary address ${_i} to dev ${_iface}"
+                /sbin/ip addr add ${_i} brd + dev ${_iface} || _failed=1
             fi
-            local _s_ip=`echo "$_i" | cut -d '/' -f1`
-            local _s_maskbits=`echo "$_i" | cut -d '/' -f2`
-            local _s_script_dir="$_readd_base/$_s_ip.$_s_maskbits"
+            local _s_ip=`echo "${_i}" | cut -d '/' -f1`
+            local _s_maskbits=`echo "${_i}" | cut -d '/' -f2`
+            local _s_script_dir="${_readd_base}/$_s_ip.$_s_maskbits"
 
             local _s_script=""
-            for _s_script in $_s_script_dir/*; do
+            for _s_script in ${_s_script_dir}/*; do
                 test -x "$_s_script" || {
                     continue
                 }
-                echo "call $_s_script '$_iface' '$_s_ip' '$_s_maskbits'"
-                $_s_script "$_iface" "$_s_ip" "$_s_maskbits" || {
+                echo "call $_s_script '${_iface}' '$_s_ip' '$_s_maskbits'"
+                $_s_script "${_iface}" "$_s_ip" "$_s_maskbits" || {
                     ret=$?
-                    echo "$_s_script '$_iface' '$_s_ip' '$_s_maskbits' - failed - $ret"
+                    echo "$_s_script '${_iface}' '$_s_ip' '$_s_maskbits' - failed - $ret"
                     _failed=1
                 }
             done
@@ -89,12 +89,12 @@ delete_ip_from_iface()
         done
     }
 
-    test -d $_script_dir && {
-        rm -f $_script_dir/*
+    test -d ${_script_dir} && {
+        rm -f ${_script_dir}/*
     }
 
     [ $_failed = 0 ] || {
-        echo "Failed to del $_ip on dev $_iface"
+        echo "Failed to del ${_ip} on dev ${_iface}"
         return 1;
     }
     return 0;
@@ -107,18 +107,18 @@ setup_iface_ip_readd_script()
     local _maskbits=$3
     local _readd_base=$4
     local _readd_script=$5
-    local _script_dir="$_readd_base/$_ip.$_maskbits"
+    local _script_dir="${_readd_base}/${_ip}.${_maskbits}"
 
     test -x "$_readd_script" || {
-        echo "Script '$_readd_script' isn't executable"
+        echo "Script $_readd_script isn't executable"
         return 1;
     }
 
     local _readd_basename=`basename $_readd_script`
-    local _readd_final="$_script_dir/$_readd_basename"
+    local _readd_final="${_script_dir}/${_readd_base}name"
 
-    mkdir -p $_script_dir || {
-        echo "Failed to mkdir -p $_script_dir"
+    mkdir -p ${_script_dir} || {
+        echo "Failed to mkdir -p ${_script_dir}"
         return 1;
     }
 
